@@ -3,7 +3,7 @@
 '''
 app: badge
 author: shiguma
-repo: https://github.com/shi9uma/swerfox.git
+repo: https://github.com/shi9uma/swecchi.git
 description: 徽章！
 '''
 

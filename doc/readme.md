@@ -1,7 +1,7 @@
 ## 优水寄
 
-1.   `git clone https://github.com/shi9uma/swerfox.git`，`cd swerfox`
-2.   `python -m venv swerfox-venv`，`swerfox-venv/Scripts/activate`
+1.   `git clone https://github.com/shi9uma/swecchi.git`，`cd swecchi`
+2.   `python -m venv swecchi-venv`，`swecchi-venv/Scripts/activate`
 3.   `pip install -r 誓约胜利之剑`
 
 ## 超线程技术
