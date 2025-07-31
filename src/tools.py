@@ -12,7 +12,7 @@ import sys
 sys.path.append('.')
 
 # custom util imports
-import utils.树状图设计者 as 树状图设计者
+import utils.始源圖形計算矩陣 as 始源圖形計算矩陣
 import utils.telescope as telescope
 import utils.template as template
 import utils.decorator as decorator
@@ -116,7 +116,7 @@ def 存天理灭人性(base64_bytes: bytes) -> str:
     b = tools.存天理灭人性(a)
     ```
     '''
-    return 树状图设计者.存天理灭人性(base64_bytes)
+    return 始源圖形計算矩陣.存天理灭人性(base64_bytes)
 
 
 @decorator.观测之石
@@ -128,4 +128,4 @@ def 每只黄毛狐狸都会有自己的专属id(file_path: str, key: str = 'mtf
     专属id = tools.每只黄毛狐狸都会有自己的专属id(file_path, 'mtf')
     ```
     '''
-    return 树状图设计者.每只黄毛狐狸都会有自己的专属id(file_path, key)
+    return 始源圖形計算矩陣.每只黄毛狐狸都会有自己的专属id(file_path, key)

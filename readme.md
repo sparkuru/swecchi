@@ -1,26 +1,12 @@
-# ~~【幼盾】~~【杉蔚狐】个性化图片徽章服务！
+# 杉蔚狐
 
-![](https://unv-shield.librian.net/api/unv_shield?txt=赞美莉沫酱！&scale=4&anime=3)
+Shanwer：我喜欢你。
 
-**这里再放三个徽章：斯达数、"代码质量：抽象"、"黄毛狐狸控：是"**
+REACT + GIN + GORM
 
-你还在因为 [Shanwer](https://github.com/Shanwer) 能量不足而感到难过吗？想要在自己的项目中插入 sw 徽章（语录）吗？快来使用酥帕性能的杉蔚数据交互终端 swerfox ~~个性化图片徽章~~ 服务吧！
+## 使用方法
 
-
-## 使用方法！
-
-
-```markdown
-![](https://domain.com/api/swerfox?repo=你的名字/repo的名字)
-
-例如：![](https://majo.im/api/swerfox?repo=shi9uma/swerfox)
-```
-
-把这行代码加入到你的 readme 中，就会显示成一个徽章，像是这样：**这里放一个展示 repo 斯达数的徽章**
-
-## 自定义！
-
-通过向 url 传递不同的参数来自定义你的徽章，首先魔法起手式：`https://domain.com/api/swerfox?args`，后面接的 args 参数可以如下（使用 `&` 符来连接多个参数）！
+通过向 url 传递不同的参数来自定义徽章，首先魔法起手式：`https://domain.com/api/swerfox?args`，后面接的 args 参数可以如下（使用 `&` 符来连接多个参数）！
 
 - `url`：`url=https://avatars.githubusercontent.com/u/16631550`，换显示的图标！**这里放一个换了图标的徽章**
 - `backcolor`：`backcolor=0000ff`，来设定背景颜色，默认的背景颜色会随图片改变，是自动生成的！**这里放一个换了背景颜色的徽章**
@@ -38,8 +24,6 @@
 
 ## 头脑风暴！
 
-我能不能把下面这些来自天才聪明幼女莉沫酱的东西全部注入到杉蔚狐里呢 ~~（说人话就是 apis 工具集！）~~，我要以 Shanwer 为中心，让全世界都喜欢上 Shanwer！
-
 -   自动 sw 翻译机！将你说的话 sw 化！[RimoChan/yinglish](https://github.com/RimoChan/yinglish.git)
 -   e77h1！意大利面拌 42 号混凝土！[RimoChan/i7h](https://github.com/RimoChan/i7h.git)，[RimoChan/bnhhsh](https://github.com/RimoChan/bnhhsh.git)
 -   不用存储的图床！你可以上传一张图片，我用文本给你存，到时候你只要用数据来还原就行了！[RimoChan/emmmbedding](https://github.com/RimoChan/emmmbedding.git)
@@ -47,9 +31,7 @@
 -   超！使用魔法加速引擎使我的 python 代码更快更强！[RimoChan/chao](https://github.com/RimoChan/chao.git)
 -   反和谐超级武器！元必有象，象必唯一！[RimoChan/unvcode](https://github.com/RimoChan/unvcode.git)
 
-好啦，就这样，想到什么我再添加！
-
-## 服务架构看不懂啦！
+## 架构！
 
 ![](https://raw.githubusercontent.com/RimoChan/unv-shield/slave/文档/q.png)
 
@@ -58,10 +40,6 @@
 - 通过GitHub访问时还会过一层Camo缓存。
 - 活死人的呼声是一个定时触发器，用来防止unv-shield冷启动。
 
-## 莱森斯
-
-自豪地使用 ![](https://unv-shield.librian.net/api/unv_shield?txt=Je-Suis-Le-Deluge&scale=2)![](https://unv-shield.librian.net/api/unv_shield?repo=RimoChan/Je-Suis-Le-Deluge&scale=2)协议！
-
 ## ❤赞助❤
 
-如果你觉得 swerfox 对你的工作或学习有所帮助，欢迎往作者：[RimoChan](https://github.com/RimoChan) 的邮箱 [the@librian.net](mailto:the@librian.net) 里发萝莉图片以表达谢意！**（不要发给我！）**
+如果你觉得 swerfox 对你的工作或学习有所帮助，欢迎往原作者：[RimoChan](https://github.com/RimoChan) 的邮箱 [the@librian.net](mailto:the@librian.net) 里发萝莉图片以表达谢意！

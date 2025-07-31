@@ -33,17 +33,15 @@ def test(times):
 test(1000)
 ```
 
+## api 设计
 
+使用 [GraphQL](https://graphql.cn/) 设计 api 交互方式
 
 ## 木桶饭
 
 1.   `pip install 'git+https://github.com/facebookresearch/segment-anything.git'`
 2.   `pip install roboflow supervision`
 3.   `wget -q -O resources/models/sam-vit-h-4b8939.pth 'https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth'`，文件较大，建议用其他软件下载
-
-
-
-
 
 ## references
 
