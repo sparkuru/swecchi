@@ -1,6 +1,6 @@
-<p align = "center" style="font-size: 34px;" > <strong>「SHANWER ECCHI !!!」</strong> </p>
+<p align = "center" style="font-size: 34px;" > <strong>「SHANWER ECCHI !」</strong> </p>
 
-Shanwer：我喜欢你。REACT + GIN + GORM。
+Shanwer：我喜欢你，REACT + GIN + GORM
 
 ## 使用方法！
 
