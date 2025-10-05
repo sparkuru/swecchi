@@ -27,6 +27,7 @@ from typing import List, Tuple, Dict
 
 import requests
 from bs4 import BeautifulSoup  # type: ignore
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 DEFAULT_USER_AGENT = (
@@ -55,7 +56,9 @@ def fetch_page(url: str, timeout: float, headers: dict[str, str]) -> str:
 
 def _extract_time_text(soup: "BeautifulSoup") -> str:
     """Best-effort time extraction from telegraph-like pages."""
-    meta = soup.select_one('meta[property="article:published_time"]') or soup.select_one('meta[name="article:published_time"]')
+    meta = soup.select_one(
+        'meta[property="article:published_time"]'
+    ) or soup.select_one('meta[name="article:published_time"]')
     if meta and meta.get("content"):
         return meta.get("content").strip()
     time_tag = soup.select_one(".tl_article_header time") or soup.find("time")
@@ -107,8 +110,14 @@ def ensure_directory(base_dir: Path, title: str) -> Path:
     return target
 
 
-def download_with_retry(url: str, dest_path: Path, timeout: float, headers: dict[str, str], retries: int, backoff: float) -> Path:
-    last_exc: Exception | None = None
+def download_with_retry(
+    url: str,
+    dest_path: Path,
+    timeout: float,
+    headers: dict[str, str],
+    retries: int,
+    backoff: float,
+) -> Path:
     for attempt in range(1, retries + 1):
         try:
             with requests.get(url, stream=True, timeout=timeout, headers=headers) as r:
@@ -125,8 +134,7 @@ def download_with_retry(url: str, dest_path: Path, timeout: float, headers: dict
                             f.write(chunk)
                 os.replace(tmp_path, dest_path)
                 return dest_path
-        except Exception as e:  # noqa: BLE001 - Centralized retry error handling
-            last_exc = e
+        except Exception:  # noqa: BLE001 - Centralized retry error handling
             if attempt < retries:
                 time.sleep(backoff * attempt)
             else:
@@ -159,10 +167,14 @@ def build_headers(user_agent: str | None) -> dict[str, str]:
     return headers
 
 
-def rewrite_html_with_local_images(html_text: str, url_to_local_name: Dict[str, str]) -> str:
+def rewrite_html_with_local_images(
+    html_text: str, url_to_local_name: Dict[str, str]
+) -> str:
     """Replace <img src> with local filenames if present in mapping."""
     soup = BeautifulSoup(html_text, "html.parser")
-    article = soup.select_one("#_tl_editor") or soup.select_one(".tl_article_content") or soup
+    article = (
+        soup.select_one("#_tl_editor") or soup.select_one(".tl_article_content") or soup
+    )
     for img in article.find_all("img"):
         src = (img.get("src") or "").strip()
         if not src:
@@ -175,14 +187,148 @@ def rewrite_html_with_local_images(html_text: str, url_to_local_name: Dict[str, 
     return str(soup)
 
 
+def _normalize_url(url: str) -> str:
+    url = (url or "").strip()
+    if url.startswith("//"):
+        return "https:" + url
+    return url
+
+
+def _guess_dest_path_for_index(
+    target_dir: Path, index: int, width: int, img_url: str
+) -> Path:
+    stem = str(index).zfill(width)
+    url_ext_match = re.search(
+        r"\.(jpg|jpeg|png|webp|gif|bmp)(?:\?|#|$)", img_url, re.IGNORECASE
+    )
+    ext = f".{url_ext_match.group(1).lower()}" if url_ext_match else ".jpg"
+    return target_dir / f"{stem}{ext}"
+
+
+def _download_one(
+    index: int,
+    img_url: str,
+    target_dir: Path,
+    width: int,
+    total_count: int,
+    timeout: float,
+    headers: dict[str, str],
+    retries: int,
+    backoff: float,
+) -> Tuple[str, str]:
+    normalized = _normalize_url(img_url)
+    dest = _guess_dest_path_for_index(target_dir, index, width, normalized)
+    print(f"[Download] {index}/{total_count} -> {dest.name}")
+    final_path = download_with_retry(
+        normalized,
+        dest,
+        timeout=timeout,
+        headers=headers,
+        retries=retries,
+        backoff=backoff,
+    )
+    return normalized, final_path.name
+
+
+def download_images_concurrently(
+    image_urls: List[str],
+    target_dir: Path,
+    timeout: float,
+    headers: dict[str, str],
+    retries: int,
+    backoff: float,
+    workers: int,
+    rounds: int,
+) -> Tuple[Dict[str, str], List[Tuple[int, str]]]:
+    total_count = len(image_urls)
+    width = max(4, len(str(total_count)))
+
+    # Work list keeps (index, url) in document order
+    remaining: List[Tuple[int, str]] = list(enumerate(image_urls, start=1))
+    url_to_local: Dict[str, str] = {}
+
+    print(f"[Info] Total images: {total_count}")
+    for round_idx in range(1, max(1, rounds) + 1):
+        if not remaining:
+            break
+        print(f"[Round] {round_idx} start, remaining: {len(remaining)}")
+
+        next_remaining: List[Tuple[int, str]] = []
+        with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
+            future_map = {
+                executor.submit(
+                    _download_one,
+                    index,
+                    img_url,
+                    target_dir,
+                    width,
+                    total_count,
+                    timeout,
+                    headers,
+                    retries,
+                    backoff,
+                ): (index, img_url)
+                for index, img_url in remaining
+            }
+
+            for future in as_completed(future_map):
+                index, img_url = future_map[future]
+                try:
+                    normalized, local_name = future.result()
+                    url_to_local[normalized] = local_name
+                except Exception as e:  # noqa: BLE001 - aggregated handling
+                    print(f"[Failed] {img_url} -> {e}", file=sys.stderr)
+                    next_remaining.append((index, img_url))
+
+        remaining = next_remaining
+        if remaining:
+            print(f"[Round] {round_idx} done, still failing: {len(remaining)}")
+
+    return url_to_local, remaining
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Parse telegra.ph page and download images in order.")
+    parser = argparse.ArgumentParser(
+        description="Parse telegra.ph page and download images in order."
+    )
     parser.add_argument("url", help="telegra.ph page URL")
-    parser.add_argument("--out", dest="out_dir", default=".", help="Output root directory (default: current)")
-    parser.add_argument("--timeout", type=float, default=20.0, help="Request timeout in seconds (default: 20)")
-    parser.add_argument("--retries", type=int, default=3, help="Retry times on download failure (default: 3)")
-    parser.add_argument("--backoff", type=float, default=1.5, help="Exponential backoff factor (default: 1.5)")
+    parser.add_argument(
+        "--out",
+        dest="out_dir",
+        default=".",
+        help="Output root directory (default: current)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=20.0,
+        help="Request timeout in seconds (default: 20)",
+    )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        default=3,
+        help="Retry times on download failure (default: 3)",
+    )
+    parser.add_argument(
+        "--backoff",
+        type=float,
+        default=1.5,
+        help="Exponential backoff factor (default: 1.5)",
+    )
     parser.add_argument("--ua", dest="ua", default=None, help="Custom User-Agent")
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=8,
+        help="Concurrent workers for downloads (default: 8)",
+    )
+    parser.add_argument(
+        "--rounds",
+        type=int,
+        default=3,
+        help="Max rounds to reattempt failed downloads set (default: 3)",
+    )
 
     args = parser.parse_args()
 
@@ -201,21 +347,31 @@ def main() -> None:
     base_dir = Path(args.out_dir)
     target_dir = ensure_directory(base_dir, title_text)
 
-    # Persist in order: 0001.jpg, 0002.jpg, ...
-    width = max(4, len(str(len(image_urls))))
-    url_to_local: Dict[str, str] = {}
-    for index, img_url in enumerate(image_urls, start=1):
-        stem = str(index).zfill(width)
-        # Try to guess extension from URL first
-        url_ext_match = re.search(r"\.(jpg|jpeg|png|webp|gif|bmp)(?:\?|#|$)", img_url, re.IGNORECASE)
-        ext = f".{url_ext_match.group(1).lower()}" if url_ext_match else ".jpg"
-        dest = target_dir / f"{stem}{ext}"
+    # Concurrent download with multi-round retries
+    url_to_local, remaining = download_images_concurrently(
+        image_urls=image_urls,
+        target_dir=target_dir,
+        timeout=args.timeout,
+        headers=headers,
+        retries=args.retries,
+        backoff=args.backoff,
+        workers=args.workers,
+        rounds=args.rounds,
+    )
+
+    if remaining:
+        # Write failed list to help manual retry if needed
         try:
-            print(f"[Download] {index}/{len(image_urls)} -> {dest.name}")
-            final_path = download_with_retry(img_url, dest, timeout=args.timeout, headers=headers, retries=args.retries, backoff=args.backoff)
-            url_to_local[img_url] = final_path.name
+            failed_path = target_dir / "failed.txt"
+            with open(failed_path, "w", encoding="utf-8") as f:
+                for index, url in sorted(remaining):
+                    f.write(f"{index}\t{url}\n")
+            print(
+                f"[Warning] {len(remaining)} files still failed after all rounds. See failed.txt",
+                file=sys.stderr,
+            )
         except Exception as e:
-            print(f"[Failed] {img_url} -> {e}", file=sys.stderr)
+            print(f"[Failed] write failed.txt -> {e}", file=sys.stderr)
 
     # Write readme.txt with url/title/time
     try:
@@ -229,7 +385,14 @@ def main() -> None:
 
     # Save rewritten HTML with local image paths
     try:
-        rewritten = rewrite_html_with_local_images(html_text, url_to_local)
+        # Also make mapping work for protocol-relative URLs
+        expanded_map: Dict[str, str] = dict(url_to_local)
+        for k, v in list(url_to_local.items()):
+            if k.startswith("https://"):
+                proto_less = k.replace("https:", "", 1)
+                if proto_less.startswith("//"):
+                    expanded_map[proto_less] = v
+        rewritten = rewrite_html_with_local_images(html_text, expanded_map)
         with open(target_dir / "index.html", "w", encoding="utf-8") as f:
             f.write(rewritten)
     except Exception as e:
@@ -240,5 +403,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
