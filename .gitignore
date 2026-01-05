@@ -1,7 +1,6 @@
 
 # customerize
 archive
-resources/config/tokens.json
 .vscode
 .cursor
 .venv
