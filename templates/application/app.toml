@@ -1,0 +1,26 @@
+# Copy this directory to apps/{{APP_ID}} before editing.
+# Template files under templates/ are never loaded as applications.
+
+# Required: unique lowercase identifier. Allowed: a-z, 0-9, and hyphen.
+id = "{{APP_ID}}"
+name = "{{APP_DISPLAY_NAME}}"
+version = "0.1.0"
+
+# Required: must stay aligned with id.
+mount = "/sw/{{APP_ID}}"
+
+# Required once the application is implemented.
+module = "apps.{{PYTHON_PACKAGE_NAME}}.app:create_application"
+
+# Keep false until implementation, configuration, and route documentation are ready.
+enabled = false
+
+# Choose one: public | private | mixed
+visibility = "{{VISIBILITY}}"
+
+# Keep only the platform capabilities that this application actually needs.
+# Allowed: db, cache, http-client, secrets, jobs, object-storage
+capabilities = ["{{CAPABILITY}}"]
+
+# Required documentation files. Add only files maintained with the application.
+docs = ["README.md", "routes.md"]

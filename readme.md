@@ -1,37 +1,54 @@
-<p align = "center" style="font-size: 34px;" > <strong>「SHANWER ECCHI !」</strong> </p>
+# swecchi
 
-## 使用方法
+一个由独立应用组成的个人 API 集合。它提供统一的域名、版本前缀、认证和运行基础设施；每个应用则独立拥有自己的路由、数据和文档。
 
-通过向 url 传递不同的参数来自定义徽章，首先魔法起手式：`https://domain.com/api/swecchi?args`，后面接的 args 参数可以如下（使用 `&` 符来连接多个参数）
+> 这个仓库正处于设计与迁移阶段。目前还没有可启动的平台运行时；`api/telegraph-parser.py` 是一项尚未接入 HTTP 平台的现有工具。
 
-- `url`：`url=https://avatars.githubusercontent.com/u/16631550`，换显示的图标 **这里放一个换了图标的徽章**
-- `backcolor`：`backcolor=0000ff`，来设定背景颜色，默认的背景颜色会随图片改变，是自动生成的 **这里放一个换了背景颜色的徽章**
-- `fontcolor`：`fontcolor=0000ff`，来设定文字的颜色，默认的文字颜色取决于背景颜色，通常使用白字，背景颜色的亮度高时使用黑字 **这里放一个换了字体颜色的徽章**
-- `scale`：`scale=2`，来让你的徽章整个等比例放大 **这里放一个放大了的徽章**
-- `text`：`text=草`，来显示徽章的文本 **这里放一个显示文本的徽章**
-- `border`：`border=4`，来设置徽章的边距和阴影扩散范围 **太麻烦了我不想写了**
-- `barlen`：`barlen=10`，来设定徽章的文字条的长度，默认的长度是由文本决定的
-- `size`：`size=50`，设定徽章尺寸，但是字号不会变
-- `fontsize`：`frontsize=30`，可以设定字体大小了
-- `barradius`：`barradius=999`，设定文本条的援交
-- `anime`：`anime=5`，还可以设定文本条弹出的动画时间
-- `shadow`：`shadow=0.9`，设定背景阴影的浓度
-- `repo`：`repo=account_name/repo_name`，**特殊参数**，可以主动获得对应 repo 的名字和斯达数
+## 路由模型
 
-## 头脑风暴
+平台统一以 `/sw` 作为公开 API 前缀。一个应用占用一个一级路由，一级路由之后的路径完全由该应用定义：
 
--   自动 sw 翻译机，将你说的话 sw 化 [RimoChan/yinglish](https://github.com/RimoChan/yinglish.git)
--   e77h1，意大利面拌 42 号混凝土 [RimoChan/i7h](https://github.com/RimoChan/i7h.git)，[RimoChan/bnhhsh](https://github.com/RimoChan/bnhhsh.git)
+```text
+/sw/{app}/{app-owned-route...}
 
-## 架构
+/sw/shortlinks/{code}
+/sw/rss/game
+/sw/rss/image
+/sw/tools/hash
+/sw/tools/telegraph/archive
+/sw/oauth/providers/github/authorize
+```
 
-![](https://raw.githubusercontent.com/RimoChan/unv-shield/slave/文档/q.png)
+平台不把 `rss`、`tools` 或其他名称视为特殊类型。它只将 `/sw/{app}/**` 分派给已注册的应用；应用可以继续定义任意层级的路由。因此扩展功能时，先判断它是否应归属于现有应用，再决定是否新增一级应用。
 
-- 服务的核心是Azure上的一个Function App<sub>(FAAS)</sub>。
-- 用cloudflare做了一层HTTP缓存，可以省钱。
-- 通过GitHub访问时还会过一层Camo缓存。
-- 活死人的呼声是一个定时触发器，用来防止unv-shield冷启动。
+## 应用
 
-## ❤赞助❤
+| 应用 | 路由前缀 | 作用 | 状态 |
+| --- | --- | --- | --- |
+| [shortlinks](apps/shortlinks/readme.md) | `/sw/shortlinks` | 创建、解析和管理个人短链 | 设计中 |
+| [rss](apps/rss/readme.md) | `/sw/rss` | 生成与聚合个人订阅源 | 设计中 |
+| [tools](apps/tools/readme.md) | `/sw/tools` | 无状态小工具及可异步执行的任务 | 设计中 |
+| [oauth](apps/oauth/readme.md) | `/sw/oauth` | 本平台使用外部 OAuth 身份提供方 | 设计中 |
+| [badge](apps/badge/readme.md) | `/sw/badge` | 原动态徽章服务的保留说明 | 历史应用 |
 
-如果你觉得 swecchi 对你的工作或学习有所帮助，欢迎往原作者：[RimoChan](https://github.com/RimoChan) 的邮箱 [the@librian.net](mailto:the@librian.net) 里发萝莉图片以表达谢意
+每个应用目录都包含：
+
+- `app.toml`：机器可读的注册信息、运行能力和挂载位置；
+- `readme.md`：目的、使用者、边界和数据责任；
+- `routes.md`：稳定的路由、参数、示例与错误约定。
+
+新建应用可从 [应用模板](templates/application/USAGE.md) 复制；模板中的 `{{PLACEHOLDER}}` 必须替换或删除，不能作为应用配置提交。
+
+## 平台契约
+
+新增应用前，请先阅读：
+
+- [架构与目录约定](docs/architecture.md)
+- [应用注册契约](docs/application-contract.md)
+- [HTTP 约定](docs/http-conventions.md)
+
+平台核心只拥有配置、应用加载、认证与权限、速率限制、日志与追踪、错误格式、OpenAPI、数据库/缓存/密钥/后台任务等共享能力。业务路由、领域模型、专属数据迁移和服务文档属于应用本身。
+
+## 演进方式
+
+`shortlinks`、`rss`、`tools` 和 `oauth` 是四个刻意不同的纵向样本：它们分别覆盖重定向与持久化、内容生成与缓存、同步或异步工具任务、以及外部身份授权。先实现这些样本，再只为已经出现的重复需求抽取平台能力；不要预先建立“工具应用”“RSS 应用”等僵硬的继承体系。

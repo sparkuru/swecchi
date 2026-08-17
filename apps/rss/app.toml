@@ -1,0 +1,9 @@
+id = "rss"
+name = "RSS"
+version = "0.1.0"
+mount = "/sw/rss"
+module = "apps.rss.app:create_application"
+enabled = false
+visibility = "mixed"
+capabilities = ["db", "cache", "http-client", "jobs"]
+docs = ["readme.md", "routes.md"]

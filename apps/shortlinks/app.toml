@@ -1,0 +1,9 @@
+id = "shortlinks"
+name = "Shortlinks"
+version = "0.1.0"
+mount = "/sw/shortlinks"
+module = "apps.shortlinks.app:create_application"
+enabled = false
+visibility = "mixed"
+capabilities = ["db", "cache"]
+docs = ["readme.md", "routes.md"]

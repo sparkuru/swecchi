@@ -1,0 +1,9 @@
+id = "oauth"
+name = "OAuth"
+version = "0.1.0"
+mount = "/sw/oauth"
+module = "apps.oauth.app:create_application"
+enabled = false
+visibility = "private"
+capabilities = ["db", "secrets", "http-client"]
+docs = ["readme.md", "routes.md"]

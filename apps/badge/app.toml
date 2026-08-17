@@ -1,0 +1,9 @@
+id = "badge"
+name = "Swecchi badge service"
+version = "0.0.0"
+mount = "/sw/badge"
+module = "apps.badge.app:create_application"
+enabled = false
+visibility = "public"
+capabilities = ["http-client", "cache"]
+docs = ["readme.md", "routes.md"]

@@ -1,0 +1,9 @@
+id = "tools"
+name = "Tools"
+version = "0.1.0"
+mount = "/sw/tools"
+module = "apps.tools.app:create_application"
+enabled = false
+visibility = "mixed"
+capabilities = ["http-client", "jobs", "object-storage"]
+docs = ["readme.md", "routes.md"]
